@@ -31,6 +31,16 @@ const hlsjsDefaults = {
   enableWorker: true,
   lowLatencyMode: true,
   backBufferLength: 60 * 1.5,
+  fetchSetup: function (context, initParams) {
+    // Always send cookies, even for cross-origin calls.
+    console.log('Prendo was here');
+    initParams.credentials = 'include';
+    return new Request(context.url, initParams);
+  },
+  xhrSetup: function (xhr, url) {
+    // Send cookies with the request.
+    xhr.withCredentials = true;
+  },
 };
 
 let enableStreaming = getDemoConfigPropOrDefault('enableStreaming', true);
@@ -336,7 +346,7 @@ function loadSelectedStream() {
   }
 
   onDemoConfigChanged(true);
-  console.log('Using Hls.js config:', hlsConfig);
+  console.log('Using Hls.js config:', hlsConfig, hlsjsDefaults);
 
   self.hls = hls = new Hls(hlsConfig);
 

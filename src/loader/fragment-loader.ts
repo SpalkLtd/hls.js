@@ -101,6 +101,8 @@ export default class FragmentLoader {
         onSuccess: (response, stats, context, networkDetails) => {
           this.resetLoader(frag, loader);
           let payload = response.data as ArrayBuffer;
+          //Unwrap gob data
+          payload = decodeGob(payload) as unknown as ArrayBuffer;
           if (context.resetIV && frag.decryptdata) {
             frag.decryptdata.iv = new Uint8Array(payload.slice(0, 16));
             payload = payload.slice(16);
@@ -404,3 +406,41 @@ export interface FragLoadFailResult extends ErrorData {
 export type FragmentLoadProgressCallback = (
   result: FragLoadedData | PartsLoadedData,
 ) => void;
+
+function parseGobHeader(dataView) {
+  return 172; // Returns the offset where the type definitions end and actual data might begin
+}
+
+function decodeGob(encodedArrayBuffer) {
+  const dataView = new DataView(encodedArrayBuffer);
+  // const startOfData = parseGobHeader(dataView);
+  // let offset = startOfData;
+  const mpegData: number[] = [];
+  for (let i = 0; i + 188 < encodedArrayBuffer.byteLength - 1; ) {
+    //Append next mpegData (1316)
+    // mpegData.push(i);
+    //Search until we find the next two consecutive sync bytes==71(Sync byte)
+    while (
+      dataView.getUint8(i) !== 71 ||
+      (i + 188 < encodedArrayBuffer.byteLength &&
+        dataView.getUint8(i + 188) !== 71)
+    ) {
+      i++;
+    }
+    //Next push 188 bytes for every sync byte you encounter
+    while (
+      dataView.getUint8(i) === 71 &&
+      i + 188 < encodedArrayBuffer.byteLength
+    ) {
+      mpegData.push(...new Uint8Array(encodedArrayBuffer.slice(i, i + 188)));
+      i = i + 188;
+    }
+  }
+  return mpegData;
+}
+// ng 22029 2097609 76 71
+
+// 172
+// 1488
+// 1537
+// 2853
