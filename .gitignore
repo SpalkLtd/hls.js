@@ -17,7 +17,6 @@ coverage/
 
 # Build
 /lib
-/dist
 /dist.zip
 /cloudflare-pages
 /api-docs
