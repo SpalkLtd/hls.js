@@ -23,10 +23,7 @@
     "./dist/*": "./dist/*",
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist/**/*",
-    "src/**/*"
-  ],
+  "files": ["dist/**/*", "src/**/*"],
   "publishConfig": {
     "access": "public"
   },
@@ -37,7 +34,7 @@
     "build:watch": "rollup --config --configType full --configType demo --watch",
     "build:types": "tsc --build tsconfig-lib.json && api-extractor run --local",
     "dev": "run-p build:watch serve",
-    "serve": "http-server --cors -C /Users/michaelprendergast/go/src/github.com/SpalkLtd/spalk-live-sync-api/.certificates/_wildcard.spalk.localhost.pem -K $SPALK/spalk-live-sync-api/.certificates/_wildcard.spalk.localhost-key.pem -S -o /demo .",
+    "serve": "http-server --cors -C $SPALK/spalk-live-sync-api/.certificates/_wildcard.spalk.localhost.pem -K $SPALK/spalk-live-sync-api/.certificates/_wildcard.spalk.localhost-key.pem -S -o /demo .",
     "docs": "doctoc ./docs/API.md && api-documenter markdown -i api-extractor -o api-extractor/api-documenter && rm api-extractor/api-documenter/index.md && npm run docs-md-to-html",
     "docs-md-to-html": "generate-md --layout github --input api-extractor/api-documenter --output api-docs",
     "lint": "eslint --cache src/ tests/ --ext .js --ext .ts",
@@ -129,5 +126,8 @@
     "typescript": "5.4.5",
     "url-toolkit": "2.2.5",
     "wrangler": "3.51.2"
+  },
+  "dependencies": {
+    "ci": "^2.3.0"
   }
 }

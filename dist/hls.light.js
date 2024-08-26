@@ -11484,22 +11484,62 @@
     _inheritsLoose(LoadError, _Error);
     return LoadError;
   }( /*#__PURE__*/_wrapNativeSuper(Error));
-  function decodeGob(encodedArrayBuffer) {
+  function isValidBuffer(encodedArrayBuffer) {
+    // 1. Check if the input is an ArrayBuffer
+    if (!(encodedArrayBuffer instanceof ArrayBuffer)) {
+      console.error('Input is not an ArrayBuffer');
+      return false;
+    }
+
+    // 2. Check the buffer length
+    if (encodedArrayBuffer.byteLength < 188) {
+      console.error('Buffer length is too short to contain valid data');
+      return false;
+    }
     var dataView = new DataView(encodedArrayBuffer);
-    // const startOfData = parseGobHeader(dataView);
-    // let offset = startOfData;
-    var mpegData = [];
-    for (var i = 0; i + 188 < encodedArrayBuffer.byteLength - 1;) {
-      //Append next mpegData (1316)
-      // mpegData.push(i);
-      //Search until we find the next two consecutive sync bytes==71(Sync byte)
-      while (dataView.getUint8(i) !== 71 || i + 188 < encodedArrayBuffer.byteLength && dataView.getUint8(i + 188) !== 71) {
-        i++;
+
+    // 3. Initial DataView validation
+    // Check for some expected values initially or certain header info
+    // For MPEG TS, sync byte (0x47 or 71) is common at the start of every 188 bytes packet
+    var validSyncByteFound = false;
+    for (var i = 0; i + 188 < encodedArrayBuffer.byteLength; i += 188) {
+      if (dataView.getUint8(i) === 71) {
+        validSyncByteFound = true;
+        break;
       }
-      //Next push 188 bytes for every sync byte you encounter
+    }
+    if (!validSyncByteFound) {
+      console.error('No valid sync byte found in the buffer');
+      return false;
+    }
+
+    // All basic checks passed
+    return true;
+  }
+  function decodeGob(encodedArrayBuffer) {
+    if (!isValidBuffer(encodedArrayBuffer)) {
+      console.error('Invalid buffer passed to decodeGob');
+      return [];
+    }
+    var dataView = new DataView(encodedArrayBuffer);
+    var offset = 0; // You could also call parseGobHeader if necessary
+    var mpegData = [];
+    for (var i = offset; i + 188 < encodedArrayBuffer.byteLength - 1;) {
+      // Ensure this loop doesn't run indefinitely
+      var syncByteFound = false;
+      for (var j = 0; j < 1000 && i + 188 < encodedArrayBuffer.byteLength - 1; j++, i++) {
+        if (dataView.getUint8(i) === 71 && dataView.getUint8(i + 188) === 71) {
+          syncByteFound = true;
+          break;
+        }
+      }
+      if (!syncByteFound) {
+        console.warn('Failed to find consecutive sync bytes within the specified limit.');
+        break;
+      }
       while (dataView.getUint8(i) === 71 && i + 188 < encodedArrayBuffer.byteLength) {
-        mpegData.push.apply(mpegData, new Uint8Array(encodedArrayBuffer.slice(i, i + 188)));
-        i = i + 188;
+        mpegData.push.apply(mpegData, Array.from(new Uint8Array(encodedArrayBuffer.slice(i, i + 188))));
+        i += 188;
       }
     }
     return mpegData;
